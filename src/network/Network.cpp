@@ -653,12 +653,21 @@ public:
         }
 
         sockaddr_in serverAddr{};
-        serverAddr.sin_family = AF_INET;
-        if (inet_pton(AF_INET, address.c_str(), &serverAddr.sin_addr) <= 0) {
-            closesocket(descriptor);
-            throw std::runtime_error("invalid udp address: " + address);
+        addrinfo hints {};
+
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_DGRAM;
+
+        addrinfo* addrinfo = nullptr;
+        if (int res = getaddrinfo(
+            address.c_str(), nullptr, &hints, &addrinfo
+        )) {
+            throw std::runtime_error(gai_strerror(res));
         }
+
+        std::memcpy(&serverAddr, addrinfo->ai_addr, sizeof(sockaddr_in));
         serverAddr.sin_port = htons(port);
+        freeaddrinfo(addrinfo);
 
         if (::connect(descriptor, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
             auto err = handle_socket_error("udp connect failed");
