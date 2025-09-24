@@ -258,9 +258,15 @@ network.__process_events = function()
             end
         elseif etype == DATAGRAM then
             if side == ON_CLIENT then
-                _udp_client_datagram_callbacks[cid](data)
+                local callback = _udp_client_datagram_callbacks[cid]
+                if callback then
+                    callback(data)
+                end
             elseif side == ON_SERVER then
-                _udp_server_callbacks[sid](addr, port, data)
+                local callback = _udp_server_callbacks[sid]
+                if callback then
+                    callback(addr, port, data)
+                end
             end
         elseif etype == RESPONSE then
             if event[2] / 100 == 2 then

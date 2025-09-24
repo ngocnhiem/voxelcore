@@ -606,7 +606,6 @@ public:
         }
         sockaddr_in address;
         address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(port);
         if (bind(descriptor, (sockaddr*)&address, sizeof(address)) < 0) {
             closesocket(descriptor);
@@ -619,6 +618,27 @@ public:
         return server;
     }
 };
+
+static sockaddr_in resolve_address_dgram(const std::string& address, int port) {
+    sockaddr_in serverAddr{};
+    addrinfo hints {};
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    addrinfo* addrinfo = nullptr;
+    if (int res = getaddrinfo(
+        address.c_str(), nullptr, &hints, &addrinfo
+    )) {
+        throw std::runtime_error(gai_strerror(res));
+    }
+
+    std::memcpy(&serverAddr, addrinfo->ai_addr, sizeof(sockaddr_in));
+    serverAddr.sin_port = htons(port);
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    freeaddrinfo(addrinfo);
+    return serverAddr;
+}
 
 class SocketUdpConnection : public UdpConnection {
     u64id_t id;
@@ -652,23 +672,7 @@ public:
             throw std::runtime_error("could not create udp socket");
         }
 
-        sockaddr_in serverAddr{};
-        addrinfo hints {};
-
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_DGRAM;
-        serverAddr.sin_addr.s_addr = INADDR_ANY;
-
-        addrinfo* addrinfo = nullptr;
-        if (int res = getaddrinfo(
-            address.c_str(), nullptr, &hints, &addrinfo
-        )) {
-            throw std::runtime_error(gai_strerror(res));
-        }
-
-        std::memcpy(&serverAddr, addrinfo->ai_addr, sizeof(sockaddr_in));
-        serverAddr.sin_port = htons(port);
-        freeaddrinfo(addrinfo);
+        sockaddr_in serverAddr = resolve_address_dgram(address, port);
 
         if (::connect(descriptor, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
             auto err = handle_socket_error("udp connect failed");
@@ -799,11 +803,7 @@ public:
     }
 
     void sendTo(const std::string& addr, int port, const char* buffer, size_t length) override {
-        sockaddr_in client{};
-        client.sin_family = AF_INET;
-        inet_pton(AF_INET, addr.c_str(), &client.sin_addr);
-        client.sin_port = htons(port);
-
+        sockaddr_in client = resolve_address_dgram(addr, port);
         sendto(descriptor, buffer, length, 0,
                reinterpret_cast<sockaddr*>(&client), sizeof(client));
     }
