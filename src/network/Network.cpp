@@ -804,9 +804,13 @@ public:
     }
 
     void sendTo(const std::string& addr, int port, const char* buffer, size_t length) override {
+        logger.info() << "sendto " << addr << ":" << port;
         sockaddr_in client = resolve_address_dgram(addr, port);
-        sendto(descriptor, buffer, length, 0,
-               reinterpret_cast<sockaddr*>(&client), sizeof(client));
+        if (sendto(descriptor, buffer, length, 0,
+               reinterpret_cast<sockaddr*>(&client), sizeof(client)) < 0) {
+            logger.error() << handle_socket_error("sendto").what();
+        }
+        
     }
 
     void close() override {
