@@ -2,12 +2,12 @@ for i = 1, 3 do
     print(string.format("iteration %s", i))
     local complete = false
 
-    local server = network.udp_open(8645 + i, function (address, port, data, srv)
+    local server = network.udp_open(8645, function (address, port, data, srv)
         print(string.format("server received %s byte(s) from %s:%s", #data, address, port))
         srv:send(address, port, "pong")
     end)
 
-    network.udp_connect("localhost", 8645 + i, function (data)
+    network.udp_connect("0.0.0.0", 8645, function (data)
         print(string.format("client received %s byte(s) from server", #data))
         complete = true
     end, function (socket)

@@ -800,6 +800,7 @@ public:
 
                 callback(id, addrStr, port, buffer.data(), size);
             }
+            logger.info() << "udp clients listener stopped";
         });
     }
 
@@ -814,6 +815,7 @@ public:
 
     void close() override {
         if (!open) return;
+        logger.info() << "udp server closed";
         open = false;
         shutdown(descriptor, 2);
         closesocket(descriptor);
