@@ -1,5 +1,5 @@
 for i = 1, 3 do
-    print(string.format("iteration %s", i + 1))
+    print(string.format("iteration %s", i))
     local complete = false
 
     local server = network.udp_open(8645, function (address, port, data, srv)

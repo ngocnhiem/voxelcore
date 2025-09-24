@@ -657,6 +657,7 @@ public:
 
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
+        serverAddr.sin_addr.s_addr = INADDR_ANY;
 
         addrinfo* addrinfo = nullptr;
         if (int res = getaddrinfo(
