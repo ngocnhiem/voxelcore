@@ -711,13 +711,12 @@ public:
     }
 
     int send(const char* buffer, size_t length) override {
-        logger.info() << "SocketUdpConnection send " << length << " " << getAddress();
         int len = ::send(descriptor, buffer, length, 0);
         if (len < 0) {
             auto err = handle_socket_error("udp sendto failed");
             closesocket(descriptor);
             state = ConnectionState::CLOSED;
-            logger.error() << "SocketUdpConnection sendto: " << err.what();
+            logger.error() << "SocketUdpConnection:send: " << err.what();
         } else totalUpload += len;
 
         return len;
@@ -788,11 +787,9 @@ public:
             sockaddr_in clientAddr{};
             socklen_t addrlen = sizeof(clientAddr);
 
-            logger.info() << "udp clients listener started " << open;
             while (open) {
                 int size = recvfrom(descriptor, buffer.data(), buffer.size(), 0,
                                     reinterpret_cast<sockaddr*>(&clientAddr), &addrlen);
-                logger.info() << "udp clients listener received " << size;
                 if (size <= 0) {
                     if (!open) break;
                     continue;
@@ -803,7 +800,6 @@ public:
 
                 callback(id, addrStr, port, buffer.data(), size);
             }
-            logger.info() << "udp clients listener stopped";
         });
     }
 
@@ -818,7 +814,6 @@ public:
 
     void close() override {
         if (!open) return;
-        logger.info() << "udp server closed";
         open = false;
         shutdown(descriptor, 2);
         closesocket(descriptor);
