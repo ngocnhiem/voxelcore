@@ -711,6 +711,7 @@ public:
     }
 
     int send(const char* buffer, size_t length) override {
+        handle_socket_error("test");
         logger.info() << "SocketUdpConnection send " << length << " " << getAddress();
         int len = sendto(descriptor, buffer, length, 0,
                          (sockaddr*)&addr, sizeof(addr));
