@@ -7,6 +7,7 @@ for i = 1, 15 do
         srv:send(address, port, "pong")
     end)
 
+    app.tick()
     network.udp_connect("localhost", 8645 + i, function (data)
         print(string.format("client received %s byte(s) from server", #data))
         complete = true
