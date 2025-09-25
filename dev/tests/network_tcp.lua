@@ -7,7 +7,7 @@ for i=1,3 do
         text = text .. math.random(0, 9)
     end
 
-    local server = network.tcp_open(9645, function (client)
+    local server = network.tcp_open(7645, function (client)
         print("client connected")
         start_coroutine(function()
             print("client-listener started")
@@ -25,7 +25,7 @@ for i=1,3 do
         end, "client-listener")
     end)
 
-    network.tcp_connect("localhost", 9645, function (socket)
+    network.tcp_connect("localhost", 7645, function (socket)
         print("connected to server")
         start_coroutine(function()
             print("data-sender started")
