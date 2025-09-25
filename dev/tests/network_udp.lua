@@ -1,27 +1,28 @@
+math.randomseed(43172)
 for i = 1, 15 do
-    print(string.format("iteration %s", i))
+    debug.print(string.format("iteration %s", i))
     local complete = false
 
     local server = network.udp_open(8645 + i, function (address, port, data, srv)
-        print(string.format("server received %s byte(s) from %s:%s", #data, address, port))
+        debug.print(string.format("server received %s byte(s) from %s:%s", #data, address, port))
         srv:send(address, port, "pong")
     end)
 
     app.tick()
     network.udp_connect("localhost", 8645 + i, function (data)
-        print(string.format("client received %s byte(s) from server", #data))
+        debug.print(string.format("client received %s byte(s) from server", #data))
         complete = true
     end, function (socket)
-        print("udp socket opened")
+        debug.print("udp socket opened")
         start_coroutine(function()
-            print("udp data-sender started")
+            debug.print("udp data-sender started")
             for k = 1, 15 do
                 local payload = ""
                 for j = 1, 16 do
                     payload = payload .. math.random(0, 9)
                 end
                 socket:send(payload)
-                print(string.format("sent packet %s (%s bytes)", k, #payload))
+                debug.print(string.format("sent packet %s (%s bytes)", k, #payload))
                 coroutine.yield()
             end
             socket:close()

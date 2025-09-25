@@ -695,7 +695,9 @@ public:
         thread = std::make_unique<std::thread>([this]() {
             util::Buffer<char> buffer(16'384);
             while (open) {
+                logger.info() << "SocketUdpConnection listening";
                 int size = recv(descriptor, buffer.data(), buffer.size(), 0);
+                logger.info() << "SocketUdpConnection received " << size;
                 if (size <= 0) {
                     if (!open) break;
                     closesocket(descriptor);
