@@ -699,6 +699,7 @@ public:
                 int size = recv(descriptor, buffer.data(), buffer.size(), 0);
                 logger.info() << "SocketUdpConnection received " << size;
                 if (size <= 0) {
+                    logger.error() << handle_socket_error("SocketUdpConnection::recv").what();
                     if (!open) break;
                     closesocket(descriptor);
                     state = ConnectionState::CLOSED;
