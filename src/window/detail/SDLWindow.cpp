@@ -151,7 +151,8 @@ SDLWindow::SDLWindow(DisplaySettings *settings, std::string title) noexcept {
 
     SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
-    if (settings->fullscreen.get()) {
+    if (settings->windowMode.get() ==
+        static_cast<int>(WindowMode::FULLSCREEN)) {
         flags |= SDL_WINDOW_FULLSCREEN;
     }
 
