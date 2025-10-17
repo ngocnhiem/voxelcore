@@ -18,6 +18,7 @@
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Texture.hpp"
 #include "settings.hpp"
+#include "util/platform.hpp"
 #include "window/Window.hpp"
 #include "window/detail/SDLInput.hpp"
 
@@ -231,6 +232,17 @@ SDLWindow::~SDLWindow() {
 }
 
 void SDLWindow::swapBuffers() noexcept {
+    if (framerate > 0) {
+        auto elapsedTime = time() - prevSwap;
+        auto frameTime = 1.0 / framerate;
+        if (elapsedTime < frameTime) {
+            platform::sleep(
+                static_cast<size_t>((frameTime - elapsedTime) * 1000)
+            );
+        }
+        prevSwap = time();
+    }
+
     if (!SDL_GL_SwapWindow(window)) [[unlikely]] {  // C++20 needed
         logger.error() << "Cant swap buffer: " << SDL_GetError();
     }
@@ -425,10 +437,10 @@ double SDLWindow::time() {
 }
 
 void SDLWindow::setFramerate(int framerate) {
-    /*todo*/
-    if (!SDL_GL_SetSwapInterval(framerate)) {
+    if (!SDL_GL_SetSwapInterval(framerate == -1)) {
         logger.error() << "Failed to set framerate: " << SDL_GetError();
     }
+    this->framerate = framerate;
 }
 
 // todo: move somewhere

@@ -47,6 +47,9 @@ private:
     bool toClose = false;
     bool fullscreen = false;
 
+    double framerate = -1;
+    double prevSwap = 0.0;
+
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
     SDL_Cursor *cursor = nullptr;
