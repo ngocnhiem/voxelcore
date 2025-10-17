@@ -36,6 +36,7 @@ namespace network {
 
 namespace devtools {
     class Editor;
+    class DebuggingServer;
 }
 
 class initialize_error : public std::runtime_error {
@@ -50,6 +51,8 @@ struct CoreParameters {
     std::filesystem::path userFolder = ".";
     std::filesystem::path scriptFile;
     std::filesystem::path projectFolder;
+    std::string debugServerString;
+    int tps = 20;
 };
 
 using OnWorldOpen = std::function<void(std::unique_ptr<Level>, int64_t)>;
@@ -71,6 +74,7 @@ class Engine : public util::ObjectsKeeper {
     std::unique_ptr<Input> input;
     std::unique_ptr<gui::GUI> gui;
     std::unique_ptr<devtools::Editor> editor;
+    std::unique_ptr<devtools::DebuggingServer> debuggingServer;
     PostRunnables postRunnables;
     Time time;
     OnWorldOpen levelConsumer;
@@ -104,6 +108,7 @@ public:
     void updateFrontend();
     void renderFrame();
     void nextFrame();
+    void startPauseLoop();
     
     /// @brief Set screen (scene).
     /// nullptr may be used to delete previous screen before creating new one,
@@ -181,4 +186,10 @@ public:
     const Project& getProject() {
         return *project;
     }
+
+    devtools::DebuggingServer* getDebuggingServer() {
+        return debuggingServer.get();
+    }
+
+    void detachDebugger();
 };

@@ -14,6 +14,7 @@
 #include "coders/commons.hpp"
 #include "devtools/Editor.hpp"
 #include "devtools/Project.hpp"
+#include "devtools/DebuggingServer.hpp"
 #include "content/ContentControl.hpp"
 #include "core_defs.hpp"
 #include "io/io.hpp"
@@ -115,6 +116,9 @@ void Engine::initializeClient() {
     if (ENGINE_DEBUG_BUILD) {
         title += " [debug]";
     }
+    if (debuggingServer) {
+        title = "[debugging] " + title;
+    }
     auto [window, input] = Window::initialize(&settings.display, title);
     if (!window || !input){
         throw initialize_error("could not initialize window");
@@ -135,10 +139,11 @@ void Engine::initializeClient() {
     if (ENGINE_DEBUG_BUILD) {
         menus::create_version_label(*gui);
     }
-    keepAlive(settings.display.fullscreen.observe(
-        [this](bool value) {
-            if (value != this->window->isFullscreen()) {
-                this->window->toggleFullscreen();
+    keepAlive(settings.display.windowMode.observe(
+        [this](int value) {
+            WindowMode mode = static_cast<WindowMode>(value);
+            if (mode != this->window->getMode()) {
+                this->window->setMode(mode);
             }
         },
         true
@@ -171,6 +176,18 @@ void Engine::initialize(CoreParameters coreParameters) {
     editor = std::make_unique<devtools::Editor>(*this);
     cmd = std::make_unique<cmd::CommandsInterpreter>();
     network = network::Network::create(settings.network);
+
+    if (!params.debugServerString.empty()) {
+        try {
+            debuggingServer = std::make_unique<devtools::DebuggingServer>(
+                *this, params.debugServerString
+            );
+        } catch (const std::runtime_error& err) {
+            throw initialize_error(
+                "debugging server error: " + std::string(err.what())
+            );
+        }
+    }
 
     if (!params.scriptFile.empty()) {
         paths.setScriptFolder(params.scriptFile.parent_path());
@@ -237,7 +254,11 @@ void Engine::updateHotkeys() {
         gui->toggleDebug();
     }
     if (input->jpressed(Keycode::F11)) {
-        settings.display.fullscreen.toggle();
+        if (settings.display.windowMode.get() != static_cast<int>(WindowMode::FULLSCREEN)) {
+            settings.display.windowMode.set(static_cast<int>(WindowMode::FULLSCREEN));
+        } else {
+            settings.display.windowMode.set(static_cast<int>(WindowMode::WINDOWED));
+        }
     }
 }
 
@@ -261,6 +282,14 @@ void Engine::postUpdate() {
     network->update();
     postRunnables.run();
     scripting::process_post_runnables();
+
+    if (debuggingServer) {
+        debuggingServer->update();
+    }
+}
+
+void Engine::detachDebugger() {
+    debuggingServer.reset();
 }
 
 void Engine::updateFrontend() {
@@ -282,6 +311,30 @@ void Engine::nextFrame() {
     input->pollEvents();
 }
 
+void Engine::startPauseLoop() {
+    bool initialCursorLocked = false;
+    if (!isHeadless()) {
+        initialCursorLocked = input->isCursorLocked();
+        if (initialCursorLocked) {
+            input->toggleCursor();
+        }
+    }
+    while (!isQuitSignal() && debuggingServer) {
+        network->update();
+        if (debuggingServer->update()) {
+            break;
+        }
+        if (isHeadless()) {
+            platform::sleep(1.0 / params.tps * 1000);
+        } else {
+            nextFrame();
+        }
+    }
+    if (initialCursorLocked) {
+        input->toggleCursor();
+    }
+}
+
 void Engine::renderFrame() {
     screen->draw(time.getDelta());
 
@@ -294,7 +347,11 @@ void Engine::saveSettings() {
     io::write_string(EnginePaths::SETTINGS_FILE, toml::stringify(*settingsHandler));
     if (!params.headless) {
         logger.info() << "saving bindings";
-        io::write_string(EnginePaths::CONTROLS_FILE, input->getBindings().write());
+        if (input) {
+            io::write_string(
+                EnginePaths::CONTROLS_FILE, input->getBindings().write()
+            );
+        }
     }
 }
 
@@ -313,6 +370,7 @@ void Engine::close() {
         logger.info() << "gui finished";
     }
     audio::close();
+    debuggingServer.reset();
     network.reset();
     clearKeepedObjects();
     project.reset();
