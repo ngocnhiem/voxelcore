@@ -277,7 +277,6 @@ void SDLInput::toggleCursor() {
     cursorDrag = false;
     cursorLocked = !cursorLocked;
     SDL_SetWindowRelativeMouseMode(window.getSdlWindow(), cursorLocked);
-    SDL_SetWindowMouseGrab(window.getSdlWindow(), cursorLocked);
 }
 
 Bindings& SDLInput::getBindings() {
