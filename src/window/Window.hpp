@@ -9,11 +9,7 @@ class ImageData;
 class Input;
 struct DisplaySettings;
 
-enum class WindowMode {
-    WINDOWED,
-    FULLSCREEN,
-    BORDERLESS
-};
+enum class WindowMode { WINDOWED, FULLSCREEN, BORDERLESS };
 
 class Window {
 public:

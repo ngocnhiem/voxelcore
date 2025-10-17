@@ -24,8 +24,8 @@ public:
     void setShouldClose(bool flag) override;
 
     void setCursor(CursorShape shape) override;
-    void toggleFullscreen() override;
-    bool isFullscreen() const override;
+    void setMode(WindowMode mode) override;
+    WindowMode getMode() const override;
 
     void setIcon(const ImageData *image) override;
 

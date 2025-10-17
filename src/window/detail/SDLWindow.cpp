@@ -18,6 +18,7 @@
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Texture.hpp"
 #include "settings.hpp"
+#include "window/Window.hpp"
 #include "window/detail/SDLInput.hpp"
 
 static debug::Logger logger("window");
@@ -318,18 +319,18 @@ void SDLWindow::setCursor(CursorShape shape) {
         SDL_SetCursor(cursor);
     }
 }
-void SDLWindow::toggleFullscreen() {
-    fullscreen = !fullscreen;
-    if (!SDL_SetWindowFullscreen(window, fullscreen)) {
+void SDLWindow::setMode(WindowMode mode) {
+    // WindowMode::WINDOWED by default have the next options as disbled
+    if (!SDL_SetWindowFullscreen(window, mode == WindowMode::FULLSCREEN)) {
         logger.error() << "Cant toggle fullscreen window: " << SDL_GetError();
     }
-    if (!SDL_SyncWindow(window)) {
-        logger.error() << "Cant sync window after toggle fullscreen: "
-                       << SDL_GetError();
+    if (!SDL_SetWindowBordered(window, mode == WindowMode::BORDERLESS)) {
+        logger.error() << "Cant toggle bordered window: " << SDL_GetError();
     }
 }
-bool SDLWindow::isFullscreen() const {
-    return fullscreen;
+
+WindowMode SDLWindow::getMode() const {
+    return mode;
 }
 
 void SDLWindow::setIcon(const ImageData *image) {
