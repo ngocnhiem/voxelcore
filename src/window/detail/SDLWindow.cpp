@@ -340,6 +340,7 @@ void SDLWindow::setMode(WindowMode mode) {
     if (!SDL_SetWindowBordered(window, mode == WindowMode::BORDERLESS)) {
         logger.error() << "Cant toggle bordered window: " << SDL_GetError();
     }
+    this->mode = mode;
 }
 
 WindowMode SDLWindow::getMode() const {
