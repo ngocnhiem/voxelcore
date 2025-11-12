@@ -308,6 +308,7 @@ void Engine::nextFrame() {
             : settings.display.framerate.get()
     );
     window->swapBuffers();
+    // todo: process it on another thread
     input->pollEvents();
 }
 

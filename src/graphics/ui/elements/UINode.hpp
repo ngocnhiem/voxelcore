@@ -192,6 +192,7 @@ namespace gui {
         virtual UINode* listenFocus(const onaction& action);
         virtual UINode* listenDefocus(const onaction& action);
 
+        virtual void defocus();
         virtual void onFocus();
         virtual void doubleClick(int x, int y);
         virtual void click(int x, int y);
@@ -201,7 +202,6 @@ namespace gui {
         virtual void scrolled(int value);
 
         bool isPressed() const;
-        void defocus();
         bool isFocused() const; 
 
         /// @brief Check if element catches all user input when focused
