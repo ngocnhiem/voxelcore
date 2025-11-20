@@ -185,7 +185,7 @@ local internal_locked = false
 --     Example `base:scripts/tests.lua`
 --
 -- nocache - ignore cached script, load anyway
-local function __load_script(path, nocache, env)
+function __load_script(path, nocache, env)
     local packname, filename = parse_path(path)
 
     if internal_locked and (packname == "res" or packname == "core") 
