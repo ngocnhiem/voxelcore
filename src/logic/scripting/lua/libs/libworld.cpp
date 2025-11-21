@@ -10,7 +10,7 @@
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "world/files/WorldFiles.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "lighting/Lighting.hpp"
 #include "voxels/Chunk.hpp"

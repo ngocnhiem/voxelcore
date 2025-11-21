@@ -730,7 +730,7 @@ static int l_pull_register_events(lua::State* L) {
     lua::createtable(L, events.size() * 4, 0);
     for (int i = 0; i < events.size(); i++) {
         const auto& event = events[i];
-        lua::pushinteger(L, static_cast<int>(event.type) | event.id << 16);
+        lua::pushinteger(L, static_cast<int>(event.bits) | event.id << 16);
         lua::rawseti(L, i * 4 + 1);
 
         for (int j = 0; j < 3; j++) {

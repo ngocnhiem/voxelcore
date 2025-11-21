@@ -40,13 +40,13 @@ player.set_vel(playerid: int, x: number, y: number, z: number)
 player.get_rot(playerid: int, interpolated: bool=false) -> number, number, number
 ```
 
-Возвращает x, y, z вращения камеры (в радианах). Интерполяция актуальна в случаях, когда частота обновления вращения ниже частоты кадров.
+Возвращает x, y, z вращения камеры (в градусах). Интерполяция актуальна в случаях, когда частота обновления вращения ниже частоты кадров.
 
 ```lua
 player.set_rot(playerid: int, x: number, y: number, z: number)
 ```
 
-Устанавливает x, y вращения камеры (в радианах)
+Устанавливает x, y вращения камеры (в градусах)
 
 ```lua
 player.get_inventory(playerid: int) -> int, int
@@ -118,6 +118,18 @@ player.get_name(playerid: int) -> str
 ```
 
 Сеттер и геттер имени игрока
+
+```lua
+player.get_camera(playerid: int) -> int
+```
+
+Возвращает индекс текущей камеры игрока
+
+```lua
+player.set_camera(playerid: int, camera_index: int)
+```
+
+Переключает камеру игрока. См. [камеры](libcameras.md).
 
 ```lua
 player.set_selected_slot(playerid: int, slotid: int)

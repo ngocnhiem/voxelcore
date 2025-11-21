@@ -13,6 +13,10 @@ enum class WindowMode { WINDOWED, FULLSCREEN, BORDERLESS };
 
 class Window {
 public:
+    static inline constexpr int FPS_UNLIMITED = 0;
+
+    Window(glm::ivec2 size) : size(std::move(size)) {}
+
     virtual ~Window() = default;
     virtual void swapBuffers() noexcept = 0;
 
@@ -27,11 +31,17 @@ public:
     virtual void setMode(WindowMode mode) = 0;
     virtual WindowMode getMode() const = 0;
 
+    virtual void focus() = 0;
+
+    virtual void setTitle(const std::string& title) = 0;
     virtual void setIcon(const ImageData* image) = 0;
 
     virtual void pushScissor(glm::vec4 area) = 0;
     virtual void popScissor() = 0;
     virtual void resetScissor() = 0;
+
+    virtual void setShouldRefresh() = 0;
+    virtual bool checkShouldRefresh() = 0;
 
     virtual double time() = 0;
 

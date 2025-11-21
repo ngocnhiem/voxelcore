@@ -84,6 +84,12 @@ Hitbox* Player::getHitbox() {
     return nullptr;
 }
 
+bool Player::isCurrentCameraBuiltin() const {
+    return currentCamera.get() == fpCamera.get() ||
+           currentCamera.get() == spCamera.get() ||
+           currentCamera.get() == tpCamera.get();
+}
+
 void Player::updateSelectedEntity() {
     selectedEid = selection.entity;
 }

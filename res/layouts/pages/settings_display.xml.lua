@@ -70,4 +70,5 @@ function on_open()
     create_checkbox("camera.inertia", "Camera Inertia")
     create_checkbox("camera.fov-effects", "Camera FOV Effects")
     create_checkbox("display.limit-fps-iconified", "Limit Background FPS")
+    create_setting("graphics.gamma", "Gamma", 0.05, "", "graphics.gamma.tooltip")
 end

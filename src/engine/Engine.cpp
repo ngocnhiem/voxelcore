@@ -8,8 +8,6 @@
 #include "assets/AssetsLoader.hpp"
 #include "audio/audio.hpp"
 #include "coders/GLSLExtension.hpp"
-#include "coders/imageio.hpp"
-#include "coders/json.hpp"
 #include "coders/toml.hpp"
 #include "coders/commons.hpp"
 #include "devtools/Editor.hpp"
@@ -18,27 +16,28 @@
 #include "content/ContentControl.hpp"
 #include "core_defs.hpp"
 #include "io/io.hpp"
+#include "io/settings_io.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
 #include "frontend/screens/Screen.hpp"
 #include "graphics/render/ModelsGenerator.hpp"
 #include "graphics/core/DrawContext.hpp"
-#include "graphics/core/ImageData.hpp"
 #include "graphics/core/Shader.hpp"
 #include "graphics/ui/GUI.hpp"
-#include "objects/rigging.hpp"
+#include "graphics/ui/elements/Menu.hpp"
 #include "logic/EngineController.hpp"
 #include "logic/CommandsInterpreter.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "logic/scripting/scripting_hud.hpp"
 #include "network/Network.hpp"
 #include "util/platform.hpp"
-#include "window/Camera.hpp"
 #include "window/input.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
 #include "Mainloop.hpp"
 #include "ServerMainloop.hpp"
+#include "WindowControl.hpp"
+#include "EnginePaths.hpp"
 
 #include <iostream>
 #include <assert.h>
@@ -48,29 +47,6 @@
 #include <utility>
 
 static debug::Logger logger("engine");
-
-static std::unique_ptr<ImageData> load_icon() {
-    try {
-        auto file = "res:textures/misc/icon.png";
-        if (io::exists(file)) {
-            return imageio::read(file);
-        }
-    } catch (const std::exception& err) {
-        logger.error() << "could not load window icon: " << err.what();
-    }
-    return nullptr;
-}
-
-static std::unique_ptr<scripting::IClientProjectScript> load_client_project_script() {
-    io::path scriptFile = "project:project_client.lua";
-    if (io::exists(scriptFile)) {
-        logger.info() << "starting project script";
-        return scripting::load_client_project_script(scriptFile);
-    } else {
-        logger.warning() << "project script does not exists";
-    }
-    return nullptr;
-}
 
 Engine::Engine() = default;
 Engine::~Engine() = default;
@@ -86,7 +62,7 @@ Engine& Engine::getInstance() {
 
 void Engine::onContentLoad() {
     editor->loadTools();
-    langs::setup(langs::get_current(), paths.resPaths.collectRoots());
+    langs::setup(langs::get_current(), paths->resPaths.collectRoots());
     
     if (isHeadless()) {
         return;
@@ -94,6 +70,7 @@ void Engine::onContentLoad() {
     for (auto& pack : content->getAllContentPacks()) {
         auto configFolder = pack.folder / "config";
         auto bindsFile = configFolder / "bindings.toml";
+        logger.info() << "loading bindings: " << bindsFile.string();
         if (io::is_regular_file(bindsFile)) {
             input->getBindings().read(
                 toml::parse(
@@ -107,29 +84,9 @@ void Engine::onContentLoad() {
 }
 
 void Engine::initializeClient() {
-    std::string title = project->title;
-    if (title.empty()) {
-        title = "VoxelCore v" +
-                        std::to_string(ENGINE_VERSION_MAJOR) + "." +
-                        std::to_string(ENGINE_VERSION_MINOR);
-    }
-    if (ENGINE_DEBUG_BUILD) {
-        title += " [debug]";
-    }
-    if (debuggingServer) {
-        title = "[debugging] " + title;
-    }
-    auto [window, input] = Window::initialize(&settings.display, title);
-    if (!window || !input){
-        throw initialize_error("could not initialize window");
-    }
-    window->setFramerate(settings.display.framerate.get());
+    windowControl = std::make_unique<WindowControl>(*this);
+    auto [window, input] = windowControl->initialize();
 
-    time.set(window->time());
-    if (auto icon = load_icon()) {
-        icon->flipY();
-        window->setIcon(icon.get());
-    }
     this->window = std::move(window);
     this->input = std::move(input);
 
@@ -154,6 +111,14 @@ void Engine::initializeClient() {
         },
         true
     ));
+
+    keepAlive(this->input->addKeyCallback(Keycode::ESCAPE, [this]() {
+        auto& menu = *gui->getMenu();
+        if (menu.hasOpenPage() && menu.back()) {
+            return true;
+        }
+        return false;
+    }));
 }
 
 void Engine::initialize(CoreParameters coreParameters) {
@@ -162,15 +127,12 @@ void Engine::initialize(CoreParameters coreParameters) {
 
     logger.info() << "engine version: " << ENGINE_VERSION_STRING;
     if (params.headless) {
-        logger.info() << "headless mode is enabled";
+        logger.info() << "engine runs in headless mode";
     }
     if (params.projectFolder.empty()) {
         params.projectFolder = params.resFolder;
     }
-    paths.setResourcesFolder(params.resFolder);
-    paths.setUserFilesFolder(params.userFolder);
-    paths.setProjectFolder(params.projectFolder);
-    paths.prepare();
+    paths = std::make_unique<EnginePaths>(params);
     loadProject();
 
     editor = std::make_unique<devtools::Editor>(*this);
@@ -188,10 +150,6 @@ void Engine::initialize(CoreParameters coreParameters) {
             );
         }
     }
-
-    if (!params.scriptFile.empty()) {
-        paths.setScriptFolder(params.scriptFile.parent_path());
-    }
     loadSettings();
 
     controller = std::make_unique<EngineController>(*this);
@@ -205,7 +163,7 @@ void Engine::initialize(CoreParameters coreParameters) {
             langs::locale_by_envlocale(platform::detect_locale())
         );
     }
-    content = std::make_unique<ContentControl>(*project, paths, *input, [this]() {
+    content = std::make_unique<ContentControl>(*project, *paths, *input, [this]() {
         onContentLoad();
     });
     scripting::initialize(this);
@@ -214,10 +172,13 @@ void Engine::initialize(CoreParameters coreParameters) {
         gui->setPageLoader(scripting::create_page_loader());
     }
     keepAlive(settings.ui.language.observe([this](auto lang) {
-        langs::setup(lang, paths.resPaths.collectRoots());
+        langs::setup(lang, paths->resPaths.collectRoots());
     }, true));
 
-    project->clientScript = load_client_project_script();
+    project->loadProjectStartScript();
+    if (!params.headless) {
+        project->loadProjectClientScript();
+    }
 }
 
 void Engine::loadSettings() {
@@ -247,27 +208,15 @@ void Engine::loadControls() {
 
 void Engine::updateHotkeys() {
     if (input->jpressed(Keycode::F2)) {
-        saveScreenshot();
+        windowControl->saveScreenshot();
     }
     if (input->pressed(Keycode::LEFT_CONTROL) && input->pressed(Keycode::F3) &&
         input->jpressed(Keycode::U)) {
         gui->toggleDebug();
     }
     if (input->jpressed(Keycode::F11)) {
-        if (settings.display.windowMode.get() != static_cast<int>(WindowMode::FULLSCREEN)) {
-            settings.display.windowMode.set(static_cast<int>(WindowMode::FULLSCREEN));
-        } else {
-            settings.display.windowMode.set(static_cast<int>(WindowMode::WINDOWED));
-        }
+        windowControl->toggleFullscreen();
     }
-}
-
-void Engine::saveScreenshot() {
-    auto image = window->takeScreenshot();
-    image->flipY();
-    io::path filename = paths.getNewScreenshotFile("png");
-    imageio::write(filename.string(), image.get());
-    logger.info() << "saved screenshot as " << filename.string();
 }
 
 void Engine::run() {
@@ -292,6 +241,12 @@ void Engine::detachDebugger() {
     debuggingServer.reset();
 }
 
+void Engine::applicationTick() {
+    if (project->setupCoroutine && project->setupCoroutine->isActive()) {
+        project->setupCoroutine->update();
+    }
+}
+
 void Engine::updateFrontend() {
     double delta = time.getDelta();
     updateHotkeys();
@@ -301,15 +256,8 @@ void Engine::updateFrontend() {
     gui->postAct();
 }
 
-void Engine::nextFrame() {
-    window->setFramerate(
-        window->isIconified() && settings.display.limitFpsIconified.get()
-            ? 20
-            : settings.display.framerate.get()
-    );
-    window->swapBuffers();
-    // todo: process it on another thread
-    input->pollEvents();
+void Engine::nextFrame(bool waitForRefresh) {
+    windowControl->nextFrame(waitForRefresh);
 }
 
 void Engine::startPauseLoop() {
@@ -328,7 +276,7 @@ void Engine::startPauseLoop() {
         if (isHeadless()) {
             platform::sleep(1.0 / params.tps * 1000);
         } else {
-            nextFrame();
+            nextFrame(false);
         }
     }
     if (initialCursorLocked) {
@@ -399,17 +347,18 @@ void Engine::setLevelConsumer(OnWorldOpen levelConsumer) {
 
 void Engine::loadAssets() {
     logger.info() << "loading assets";
-    Shader::preprocessor->setPaths(&paths.resPaths);
+    Shader::preprocessor->setPaths(&paths->resPaths);
 
     auto content = this->content->get();
 
     auto new_assets = std::make_unique<Assets>();
-    AssetsLoader loader(*this, *new_assets, paths.resPaths);
+    AssetsLoader loader(*this, *new_assets, paths->resPaths);
     AssetsLoader::addDefaults(loader, content);
 
     // no need
     // correct log messages order is more useful
-    bool threading = false; // look at two upper lines
+    // todo: before setting to true, check if GLSLExtension thread safe
+    bool threading = false; // look at three upper lines
     if (threading) {
         auto task = loader.startTask([=](){});
         task->waitForEnd();
@@ -446,6 +395,7 @@ void Engine::setScreen(std::shared_ptr<Screen> screen) {
     }
     if (project->clientScript && this->screen) {
         project->clientScript->onScreenChange(this->screen->getName(), true);
+        window->setShouldRefresh();
     }
 }
 
@@ -479,11 +429,11 @@ Assets* Engine::getAssets() {
 }
 
 EnginePaths& Engine::getPaths() {
-    return paths;
+    return *paths;
 }
 
 ResPaths& Engine::getResPaths() {
-    return paths.resPaths;
+    return paths->resPaths;
 }
 
 std::shared_ptr<Screen> Engine::getScreen() {

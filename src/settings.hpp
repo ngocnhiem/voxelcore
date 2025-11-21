@@ -31,6 +31,8 @@ struct DisplaySettings {
     IntegerSetting framerate {-1, -1, 120};
     /// @brief Limit framerate when window is iconified
     FlagSetting limitFpsIconified {false};
+    /// @brief Adaptive framerate in menu (experimental)
+    FlagSetting adaptiveFpsInMenu {false};
 };
 
 struct ChunksSettings {
@@ -83,6 +85,8 @@ struct GraphicsSettings {
     IntegerSetting shadowsQuality {0, 0, 3};
     /// @brief Dense render distance
     IntegerSetting denseRenderDistance {56, 0, 10'000};
+    /// @brief Soft lighting for blocks
+    FlagSetting softLighting {true};
 };
 
 struct PathfindingSettings {

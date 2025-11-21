@@ -197,6 +197,7 @@ bool DebuggingServer::performCommand(
         connectionEstablished = true;
         logger.info() << "client connection established";
         connection->sendResponse("success");
+        return true;
     }
     if (!connectionEstablished) {
         return false;

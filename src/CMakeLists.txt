@@ -112,7 +112,7 @@ target_compile_options(
            -Wno-sign-compare
            -Wno-unknown-pragmas
            >
-           $<$<CXX_COMPILER_ID:Clang>:
+           $<$<CXX_COMPILER_ID:GNU>:
            -Wduplicated-branches
            -Wduplicated-cond
            >)

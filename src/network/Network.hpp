@@ -7,7 +7,7 @@ namespace network {
     public:
         ~TcpConnection() override = default;
 
-        virtual void connect(runnable callback) = 0;
+        virtual void connect(runnable callback, stringconsumer errorCallback) = 0;
 
         virtual void setNoDelay(bool noDelay) = 0;
         [[nodiscard]] virtual bool isNoDelay() const = 0;
@@ -88,8 +88,20 @@ namespace network {
         [[nodiscard]] Connection* getConnection(u64id_t id, bool includePrivate);
         [[nodiscard]] Server* getServer(u64id_t id, bool includePrivate) const;
 
-        u64id_t connectTcp(const std::string& address, int port, consumer<u64id_t> callback);
-        u64id_t connectUdp(const std::string& address, int port, const consumer<u64id_t>& callback, ClientDatagramCallback handler);
+        int findFreePort() const;
+
+        u64id_t connectTcp(
+            const std::string& address,
+            int port,
+            consumer<u64id_t> callback,
+            ConnectErrorCallback errorCallback
+        );
+        u64id_t connectUdp(
+            const std::string& address,
+            int port,
+            const consumer<u64id_t>& callback,
+            ClientDatagramCallback handler
+        );
 
         u64id_t openTcpServer(int port, ConnectCallback handler);
         u64id_t openUdpServer(int port, const ServerDatagramCallback& handler);

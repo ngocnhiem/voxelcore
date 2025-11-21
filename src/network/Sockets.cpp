@@ -106,6 +106,7 @@ class SocketTcpConnection : public TcpConnection {
     std::vector<char> readBatch;
     util::Buffer<char> buffer;
     std::mutex mutex;
+    std::string errorMessage;
 
     void connectSocket() {
         state = ConnectionState::CONNECTING;
@@ -115,7 +116,8 @@ class SocketTcpConnection : public TcpConnection {
             auto error = handle_socket_error("Connect failed");
             closesocket(descriptor);
             state = ConnectionState::CLOSED;
-            logger.error() << error.what();
+            errorMessage = error.what();
+            logger.error() << errorMessage;
             return;
         }
         logger.info() << "connected to " << to_string(addr);
@@ -182,13 +184,15 @@ public:
         thread = std::make_unique<std::thread>([this]() { startListen();});
     }
 
-    void connect(runnable callback) override {
-        thread = std::make_unique<std::thread>([this, callback]() {
+    void connect(runnable callback, stringconsumer errorCallback) override {
+        thread = std::make_unique<std::thread>([this, callback, errorCallback]() {
             connectSocket();
             if (state == ConnectionState::CONNECTED) {
                 callback();
+                startListen();
+            } else {
+                errorCallback(errorMessage);
             }
-            startListen();
         });
     }
 
@@ -263,7 +267,10 @@ public:
     }
 
     static std::shared_ptr<SocketTcpConnection> connect(
-        const std::string& address, int port, runnable callback
+        const std::string& address,
+        int port,
+        runnable callback,
+        stringconsumer errorCallback
     ) {
         addrinfo hints {};
 
@@ -274,7 +281,11 @@ public:
         if (int res = getaddrinfo(
             address.c_str(), nullptr, &hints, &addrinfo
         )) {
-            throw std::runtime_error(gai_strerror(res));
+            std::string errorMessage = gai_strerror(res);
+            if (errorCallback) {
+                errorCallback(errorMessage);
+            }
+            throw std::runtime_error(errorMessage);
         }
 
         sockaddr_in serverAddress;
@@ -284,10 +295,14 @@ public:
 
         SOCKET descriptor = socket(AF_INET, SOCK_STREAM, 0);
         if (descriptor == -1) {
-            throw std::runtime_error("Could not create socket");
+            std::string errorMessage = "could not create socket";
+            if (errorCallback) {
+                errorCallback(errorMessage);
+            }
+            throw std::runtime_error(errorMessage);
         }
         auto socket = std::make_shared<SocketTcpConnection>(descriptor, std::move(serverAddress));
-        socket->connect(std::move(callback));
+        socket->connect(std::move(callback), std::move(errorCallback));
         return socket;
     }
 
@@ -428,6 +443,7 @@ public:
             closesocket(descriptor);
             throw std::runtime_error("could not bind port "+std::to_string(port));
         }
+        port = ntohs(address.sin_port);
         logger.info() << "opened server at port " << port;
         auto server =
             std::make_shared<SocketTcpServer>(id, network, descriptor, port);
@@ -670,9 +686,14 @@ public:
 
 namespace network {
     std::shared_ptr<TcpConnection> connect_tcp(
-        const std::string& address, int port, runnable callback
+        const std::string& address,
+        int port,
+        runnable callback,
+        stringconsumer errorCallback
     ) {
-        return SocketTcpConnection::connect(address, port, std::move(callback));
+        return SocketTcpConnection::connect(
+            address, port, std::move(callback), std::move(errorCallback)
+        );
     }
 
     std::shared_ptr<TcpServer> open_tcp_server(
@@ -700,5 +721,25 @@ namespace network {
         const ServerDatagramCallback& handler
     ) {
         return SocketUdpServer::openServer(id, network, port, handler);
+    }
+
+    int find_free_port() {
+        SOCKET descriptor = socket(AF_INET, SOCK_STREAM, 0);
+        if (descriptor == -1) {
+            return -1;
+        }
+        sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = 0;
+        if (bind(descriptor, (sockaddr*)&address, sizeof(address)) < 0) {
+            closesocket(descriptor);
+            return -1;
+        }
+        socklen_t len = sizeof(address);
+        getsockname(descriptor, (sockaddr*)&address, &len);
+        int port = ntohs(address.sin_port);
+        closesocket(descriptor);
+        return port;
     }
 }

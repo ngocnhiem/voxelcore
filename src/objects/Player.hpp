@@ -131,6 +131,8 @@ public:
         return position;
     }
 
+    bool isCurrentCameraBuiltin() const;
+
     Hitbox* getHitbox();
 
     void setSpawnPoint(glm::vec3 point);
@@ -146,5 +148,9 @@ public:
 
     inline u64id_t getId() const {
         return id;
+    }
+
+    Level& getLevel() const {
+        return level;
     }
 };

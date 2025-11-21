@@ -3,7 +3,6 @@
 #include <vector>
 #include <cwctype>
 
-#include "../lua_custom_types.hpp"
 #include "util/stringutil.hpp"
 
 static int l_tobytes(lua::State* L) {

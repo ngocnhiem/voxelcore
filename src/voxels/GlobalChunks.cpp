@@ -2,22 +2,23 @@
 
 #include <algorithm>
 
-#include "content/Content.hpp"
+#include "Block.hpp"
+#include "Chunk.hpp"
 #include "coders/json.hpp"
+#include "content/Content.hpp"
 #include "debug/Logger.hpp"
-#include "world/files/WorldFiles.hpp"
 #include "items/Inventories.hpp"
 #include "lighting/Lightmap.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Entity.hpp"
-#include "voxels/blocks_agent.hpp"
 #include "typedefs.hpp"
-#include "world/LevelEvents.hpp"
+#include "util/ObjectsPool.hpp"
+#include "voxels/blocks_agent.hpp"
+#include "world/files/WorldFiles.hpp"
 #include "world/Level.hpp"
+#include "world/LevelEvents.hpp"
 #include "world/World.hpp"
-#include "Block.hpp"
-#include "Chunk.hpp"
 
 static debug::Logger logger("chunks-storage");
 
@@ -89,13 +90,15 @@ static inline auto load_inventories(
     return invs;
 }
 
+static util::ObjectsPool<Chunk> chunks_pool(1'024);
+
 std::shared_ptr<Chunk> GlobalChunks::create(int x, int z) {
     const auto& found = chunksMap.find(keyfrom(x, z));
     if (found != chunksMap.end()) {
         return found->second;
     }
 
-    auto chunk = std::make_shared<Chunk>(x, z);
+    auto chunk = chunks_pool.create(x, z);
     chunksMap[keyfrom(x, z)] = chunk;
 
     World& world = *level.getWorld();
@@ -127,8 +130,6 @@ std::shared_ptr<Chunk> GlobalChunks::create(int x, int z) {
         chunk->flags.loadedLights = true;
     }
     chunk->blocksMetadata = regions.getBlocksData(chunk->x, chunk->z);
-
-    level.events->trigger(LevelEventType::CHUNK_PRESENT, chunk.get());
     return chunk;
 }
 

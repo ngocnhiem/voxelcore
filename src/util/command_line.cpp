@@ -6,7 +6,7 @@
 #include <string>
 #include <iomanip>
 
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "util/ArgsReader.hpp"
 #include "engine/Engine.hpp"
 

@@ -9,7 +9,8 @@
 #include "content/Content.hpp"
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
-#include "../lua_custom_types.hpp"
+#include "engine/EnginePaths.hpp"
+#include "../usertypes/lua_type_voxelfragment.hpp"
 
 using namespace scripting;
 

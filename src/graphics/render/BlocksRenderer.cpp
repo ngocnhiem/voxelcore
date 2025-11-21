@@ -9,7 +9,7 @@
 #include "lighting/Lightmap.hpp"
 #include "frontend/ContentGfxCache.hpp"
 
-const glm::vec3 BlocksRenderer::SUN_VECTOR(0.528265f, 0.833149f, -0.163704f);
+const glm::vec3 BlocksRenderer::SUN_VECTOR(0.528265, 0.833149, -0.163704);
 const float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
 
 BlocksRenderer::BlocksRenderer(
@@ -35,8 +35,7 @@ BlocksRenderer::BlocksRenderer(
     blockDefsCache = content.getIndices()->blocks.getDefs();
 }
 
-BlocksRenderer::~BlocksRenderer() {
-}
+BlocksRenderer::~BlocksRenderer() = default;
 
 /// Basic vertex add method
 void BlocksRenderer::vertex(
@@ -308,7 +307,7 @@ void BlocksRenderer::blockCustomModel(
         Z = orient.axes[2];
     }
 
-    const auto& model = cache.getModel(block.rt.id);
+    const auto& model = cache.getModel(block.rt.id, block.getVariantIndex(states.userbits));
     for (const auto& mesh : model.meshes) {
         if (vertexCount + mesh.vertices.size() >= capacity) {
             overflow = true;
@@ -480,6 +479,7 @@ void BlocksRenderer::render(
 ) {
     bool denseRender = this->denseRender;
     bool densePass = this->densePass;
+    bool enableAO = settings.graphics.softLighting.get();
     for (const auto drawGroup : *content.drawGroups) {
         int begin = beginEnds[drawGroup][0];
         if (begin == 0) {
@@ -516,7 +516,7 @@ void BlocksRenderer::render(
             switch (def.getModel(state.userbits).type) {
                 case BlockModelType::BLOCK:
                     blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
-                              def.ambientOcclusion);
+                              def.ambientOcclusion && enableAO);
                     break;
                 case BlockModelType::XSPRITE: {
                     if (!denseRender)
@@ -527,7 +527,7 @@ void BlocksRenderer::render(
                 case BlockModelType::AABB: {
                     if (!denseRender)
                     blockAABB({x, y, z}, texfaces, &def, vox.state.rotation,
-                              !def.shadeless, def.ambientOcclusion);
+                              !def.shadeless, def.ambientOcclusion && enableAO);
                     break;
                 }
                 case BlockModelType::CUSTOM: {
@@ -537,7 +537,7 @@ void BlocksRenderer::render(
                         def,
                         vox.state,
                         !def.shadeless,
-                        def.ambientOcclusion
+                        def.ambientOcclusion && enableAO
                     );
                     break;
                 }
@@ -561,6 +561,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
     size_t totalSize = 0;
 
     bool densePass = this->densePass;
+    bool enableAO = settings.graphics.softLighting.get();
     for (const auto drawGroup : *content.drawGroups) {
         int begin = beginEnds[drawGroup][0];
         if (begin == 0) {
@@ -594,7 +595,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
             switch (def.getModel(state.userbits).type) {
                 case BlockModelType::BLOCK:
                     blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
-                              def.ambientOcclusion);
+                              def.ambientOcclusion && enableAO);
                     break;
                 case BlockModelType::XSPRITE: {
                     blockXSprite(x, y, z, glm::vec3(1.0f),
@@ -602,13 +603,24 @@ SortingMeshData BlocksRenderer::renderTranslucent(
                     break;
                 }
                 case BlockModelType::AABB: {
-                    blockAABB({x, y, z}, texfaces, &def, vox.state.rotation,
-                              !def.shadeless, def.ambientOcclusion);
+                    blockAABB(
+                        {x, y, z},
+                        texfaces,
+                        &def,
+                        vox.state.rotation,
+                        !def.shadeless,
+                        def.ambientOcclusion && enableAO
+                    );
                     break;
                 }
                 case BlockModelType::CUSTOM: {
-                    blockCustomModel({x, y, z}, def, vox.state,
-                                     !def.shadeless, def.ambientOcclusion);
+                    blockCustomModel(
+                        {x, y, z},
+                        def,
+                        vox.state,
+                        !def.shadeless,
+                        def.ambientOcclusion && enableAO
+                    );
                     break;
                 }
                 default:

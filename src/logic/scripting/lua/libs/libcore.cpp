@@ -8,7 +8,7 @@
 #include "content/Content.hpp"
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "io/settings_io.hpp"
 #include "frontend/menu.hpp"
@@ -25,6 +25,7 @@
 #include "graphics/ui/gui_util.hpp"
 #include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Menu.hpp"
+#include "window/Window.hpp"
 
 using namespace scripting;
 
@@ -43,7 +44,16 @@ static int l_reset_content(lua::State* L) {
     if (level != nullptr) {
         throw std::runtime_error("world must be closed before");
     }
-    content_control->resetContent();
+    std::vector<std::string> nonResetPacks;
+    if (lua::istable(L, 1)) {
+        int len = lua::objlen(L, 1);
+        for (int i = 0; i < len; i++) {
+            lua::rawgeti(L, i + 1, 1);
+            nonResetPacks.emplace_back(lua::require_lstring(L, -1));
+            lua::pop(L);
+        }
+    }
+    content_control->resetContent(std::move(nonResetPacks));
     return 0;
 }
 
@@ -110,6 +120,7 @@ static int l_close_world(lua::State* L) {
     if (controller == nullptr) {
         throw std::runtime_error("no world open");
     }
+    controller->processBeforeQuit();
     bool save_world = lua::toboolean(L, 1);
     if (save_world) {
         controller->saveWorld();
@@ -289,6 +300,12 @@ static int l_capture_output(lua::State* L) {
     return 1;
 }
 
+static int l_set_title(lua::State* L) {
+    auto title = lua::require_string(L, 1);
+    engine->getWindow().setTitle(title);
+    return 0;
+}
+
 const luaL_Reg corelib[] = {
     {"blank", lua::wrap<l_blank>},
     {"get_version", lua::wrap<l_get_version>},
@@ -310,5 +327,6 @@ const luaL_Reg corelib[] = {
     {"open_url", lua::wrap<l_open_url>},
     {"quit", lua::wrap<l_quit>},
     {"capture_output", lua::wrap<l_capture_output>},
+    {"set_title", lua::wrap<l_set_title>},
     {nullptr, nullptr}
 };

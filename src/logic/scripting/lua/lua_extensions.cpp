@@ -309,14 +309,15 @@ static int l_debug_sendvalue(lua::State* L) {
 
         lua::pushnil(L);
         while (lua::next(L, 1)) {
-            auto key = lua::tolstring(L, -2);
+            lua::pushvalue(L, -2);
 
-            int type = lua::type(L, -1);
+            auto key = lua::tolstring(L, -1);
+            int type = lua::type(L, -2);
             table[std::string(key)] = dv::object({
                 {"type", std::string(lua::type_name(L, type))},
-                {"short", get_short_value(L, -1, type)},
+                {"short", get_short_value(L, -2, type)},
             });
-            lua::pop(L);
+            lua::pop(L, 2);
         }
         lua::pop(L);
         value = std::move(table);

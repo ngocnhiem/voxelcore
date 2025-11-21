@@ -13,7 +13,7 @@
 #include "objects/rigging.hpp"
 #include "util/listutil.hpp"
 #include "util/stringutil.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 
 static debug::Logger logger("content-loader");
 

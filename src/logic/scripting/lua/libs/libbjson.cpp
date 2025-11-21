@@ -1,7 +1,6 @@
 #include "coders/binary_json.hpp"
 #include "api_lua.hpp"
 #include "util/Buffer.hpp"
-#include "../lua_custom_types.hpp"
 
 static int l_tobytes(lua::State* L) {
     auto value = lua::tovalue(L, 1);

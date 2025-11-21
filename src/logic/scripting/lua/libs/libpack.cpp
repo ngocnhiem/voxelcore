@@ -10,7 +10,7 @@
 #include "graphics/ui/elements/Menu.hpp"
 #include "frontend/locale.hpp"
 #include "world/files/WorldFiles.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "api_lua.hpp"

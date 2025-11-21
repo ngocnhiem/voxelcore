@@ -4,11 +4,15 @@
 #include <iostream>
 
 #include "io/io.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
 #include "libs/api_lua.hpp"
-#include "lua_custom_types.hpp"
+#include "usertypes/lua_type_heightmap.hpp"
+#include "usertypes/lua_type_voxelfragment.hpp"
+#include "usertypes/lua_type_canvas.hpp"
+#include "usertypes/lua_type_random.hpp"
+#include "usertypes/lua_type_pcmstream.hpp"
 #include "engine/Engine.hpp"
 
 static debug::Logger logger("lua-state");
@@ -178,6 +182,13 @@ State* lua::create_state(const EnginePaths& paths, StateType stateType) {
     if (getglobal(L, "random")) {
         if (getglobal(L, "__vc_Random")) {
             setfield(L, "Random");
+        }
+        pop(L);
+    }
+    newusertype<LuaPCMStream>(L);
+    if (getglobal(L, "audio")) {
+        if (getglobal(L, "__vc_PCMStream")) {
+            setfield(L, "PCMStream");
         }
         pop(L);
     }

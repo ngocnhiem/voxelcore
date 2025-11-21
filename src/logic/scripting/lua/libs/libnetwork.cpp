@@ -13,11 +13,13 @@ enum NetworkEventType {
     CONNECTED_TO_SERVER,
     DATAGRAM,
     RESPONSE,
+    CONNECTION_ERROR,
 };
 
 struct ConnectionEventDto {
     u64id_t server;
     u64id_t client;
+    std::string comment {};
 };
 
 struct ResponseEventDto {
@@ -283,6 +285,11 @@ static int l_connect_tcp(lua::State* L, network::Network& network) {
             CONNECTED_TO_SERVER,
             ConnectionEventDto {0, cid}
         ));
+    }, [](u64id_t cid, std::string errorMessage) {
+        push_event(NetworkEvent(
+            CONNECTION_ERROR,
+            ConnectionEventDto {0, cid, std::move(errorMessage)}
+        ));
     });
     return lua::pushinteger(L, id);
 }
@@ -402,6 +409,14 @@ static int l_get_total_download(lua::State* L, network::Network& network) {
     return lua::pushinteger(L, network.getTotalDownload());
 }
 
+static int l_find_free_port(lua::State* L, network::Network& network) {
+    int port = network.findFreePort();
+    if (port == -1) {
+        return 0;
+    }
+    return lua::pushinteger(L, port);
+}
+
 static int l_set_nodelay(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
     bool noDelay = lua::toboolean(L, 2);
@@ -439,7 +454,8 @@ static int l_pull_events(lua::State* L, network::Network& network) {
         const auto& event = local_queue[i];
         switch (event.type) {
             case CLIENT_CONNECTED:
-            case CONNECTED_TO_SERVER: {
+            case CONNECTED_TO_SERVER:
+            case CONNECTION_ERROR: {
                 const auto& dto = std::get<ConnectionEventDto>(event.payload);
                 lua::pushinteger(L, event.type);
                 lua::rawseti(L, 1);
@@ -449,6 +465,9 @@ static int l_pull_events(lua::State* L, network::Network& network) {
 
                 lua::pushinteger(L, dto.client);
                 lua::rawseti(L, 3);
+
+                lua::pushlstring(L, dto.comment);
+                lua::rawseti(L, 4);
                 break;
             }
             case DATAGRAM: {
@@ -523,6 +542,7 @@ const luaL_Reg networklib[] = {
     {"__post", wrap<l_post>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
+    {"find_free_port", wrap<l_find_free_port>},
     {"__pull_events", wrap<l_pull_events>},
     {"__open_tcp", wrap<l_open_tcp>},
     {"__open_udp", wrap<l_open_udp>},

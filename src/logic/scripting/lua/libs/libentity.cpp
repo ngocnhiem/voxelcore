@@ -2,6 +2,7 @@
 
 #include "content/Content.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/EntityDef.hpp"
 #include "objects/Entity.hpp"

@@ -6,6 +6,7 @@
 #include "core_defs.hpp"
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "assets/Assets.hpp"
 #include "frontend/ContentGfxCache.hpp"
 #include "frontend/LevelFrontend.hpp"
@@ -75,13 +76,14 @@ LevelScreen::LevelScreen(
         engine, *controller, *renderer, assets, *player
     );
 
-    keepAlive(settings.graphics.backlight.observe([=](bool) {
+    auto resetChunks = [=](bool) {
         player->chunks->saveAndClear();
         renderer->clear();
-    }));
-    keepAlive(settings.graphics.denseRender.observe([=](bool) {
-        player->chunks->saveAndClear();
-        renderer->clear();
+    };
+    keepAlive(settings.graphics.backlight.observe(resetChunks));
+    keepAlive(settings.graphics.softLighting.observe(resetChunks));
+    keepAlive(settings.graphics.denseRender.observe([=](bool flag) {
+        resetChunks(flag);
         frontend->getContentGfxCache().refresh();
     }));
     keepAlive(settings.camera.fov.observe([=](double value) {
@@ -107,6 +109,7 @@ LevelScreen::~LevelScreen() {
     scripting::on_frontend_close();
     // unblock all bindings
     input.getBindings().enableAll();
+    playerController->getPlayer()->chunks->saveAndClear();
     controller->onWorldQuit();
     engine.getPaths().setCurrentWorldFolder("");
 }
@@ -276,5 +279,6 @@ void LevelScreen::onEngineShutdown() {
     if (hud->isInventoryOpen()) {
         hud->closeInventory();
     }
+    controller->processBeforeQuit();
     controller->saveWorld();
 }

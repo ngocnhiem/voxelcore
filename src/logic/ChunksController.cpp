@@ -15,6 +15,7 @@
 #include "voxels/Chunks.hpp"
 #include "voxels/GlobalChunks.hpp"
 #include "world/Level.hpp"
+#include "world/LevelEvents.hpp"
 #include "world/World.hpp"
 #include "world/generator/WorldGenerator.hpp"
 
@@ -172,13 +173,12 @@ void ChunksController::createChunk(const Player& player, int x, int z) const {
     auto chunk = level.chunks->create(x, z);
     player.chunks->putChunk(chunk);
     auto& chunkFlags = chunk->flags;
-
     if (!chunkFlags.loaded) {
         generator->generate(chunk->voxels, x, z);
         chunkFlags.unsaved = true;
     }
     chunk->updateHeights();
-
+    level.events->trigger(LevelEventType::CHUNK_PRESENT, chunk.get());
     if (!chunkFlags.loadedLights) {
         Lighting::prebuildSkyLight(*chunk, *level.content.getIndices());
     }
