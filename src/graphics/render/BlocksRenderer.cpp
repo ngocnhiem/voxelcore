@@ -15,7 +15,6 @@ const float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
 namespace {
 static constexpr float K_CHUNK_CENTER_BIAS = 0.5f;
 static constexpr float K_AO_NORMAL_PUSH = 0.75f;
-static constexpr float K_FACE_OFFSET_EPS = 1e-3f;
 
 static inline void expand_aabb_point(AABB& aabb, bool& init, const glm::vec3& p) {
     if (!init) { aabb.a = aabb.b = p; init = true; } else { aabb.addPoint(p); }

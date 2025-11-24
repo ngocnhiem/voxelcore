@@ -52,5 +52,5 @@ struct ChunkMesh {
     std::unique_ptr<Mesh<ChunkVertex>> mesh;
     SortingMeshData sortingMeshData;
     std::unique_ptr<Mesh<ChunkVertex> > sortedMesh = nullptr;
-    AABB localAabb; // mesh-space (chunk-local) bounds for precise culling
+    AABB localAabb {}; // mesh-space (chunk-local) bounds for precise culling
 };
