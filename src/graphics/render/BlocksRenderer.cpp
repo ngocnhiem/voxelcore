@@ -404,22 +404,22 @@ void BlocksRenderer::blockCube(
         }
     } else {
         if (isOpen(coord + Z, block, variant)) {
-            face(coord, X, Y, Z, texfaces[5], pickLight(coord + Z), lights);
+            face(coord, X, Y, Z, texfaces[5], lights ? pickLight(coord + Z) : glm::vec4(1,1,1,0), lights);
         }
         if (isOpen(coord - Z, block, variant)) {
-            face(coord, -X, Y, -Z, texfaces[4], pickLight(coord - Z), lights);
+            face(coord, -X, Y, -Z, texfaces[4], lights ? pickLight(coord - Z) : glm::vec4(1,1,1,0), lights);
         }
         if (isOpen(coord + Y, block, variant)) {
-            face(coord, X, -Z, Y, texfaces[3], pickLight(coord + Y), lights);
+            face(coord, X, -Z, Y, texfaces[3], lights ? pickLight(coord + Y) : glm::vec4(1,1,1,0), lights);
         }
         if (isOpen(coord - Y, block, variant)) {
-            face(coord, X, Z, -Y, texfaces[2], pickLight(coord - Y), lights);
+            face(coord, X, Z, -Y, texfaces[2], lights ? pickLight(coord - Y) : glm::vec4(1,1,1,0), lights);
         }
         if (isOpen(coord + X, block, variant)) {
-            face(coord, -Z, Y, X, texfaces[1], pickLight(coord + X), lights);
+            face(coord, -Z, Y, X, texfaces[1], lights ? pickLight(coord + X) : glm::vec4(1,1,1,0), lights);
         }
         if (isOpen(coord - X, block, variant)) {
-            face(coord, Z, Y, -X, texfaces[0], pickLight(coord - X), lights);
+            face(coord, Z, Y, -X, texfaces[0], lights ? pickLight(coord - X) : glm::vec4(1,1,1,0), lights);
         }
     }
 }
