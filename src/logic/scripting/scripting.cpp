@@ -253,9 +253,9 @@ void scripting::process_post_runnables() {
     }
 }
 
-template <class T>
+template <class T, typename IdType>
 static int push_properties_tables(
-    lua::State* L, const ContentUnitIndices<T>& indices
+    lua::State* L, const ContentUnitIndices<T, IdType>& indices
 ) {
     const auto units = indices.getDefs();
     size_t size = indices.count();

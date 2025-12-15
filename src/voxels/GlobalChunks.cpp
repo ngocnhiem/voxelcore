@@ -70,7 +70,7 @@ void GlobalChunks::erase(int x, int z) {
 static inline auto load_inventories(
     WorldRegions& regions,
     const Chunk& chunk,
-    const ContentUnitIndices<Block>& defs
+    const ContentUnitIndices<Block, blockid_t>& defs
 ) {
     auto invs = regions.fetchInventories(chunk.x, chunk.z);
     auto iterator = invs.begin();
