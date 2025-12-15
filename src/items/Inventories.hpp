@@ -26,7 +26,7 @@ public:
     /// @brief Create runtime-only inventory (has negative id)
     std::shared_ptr<Inventory> createVirtual(size_t size);
 
-    /// @brief Store inventory
+    /// @brief Check and add inventory to the storage
     void store(const std::shared_ptr<Inventory>& inv);
 
     /// @brief Remove inventory from map

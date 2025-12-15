@@ -124,7 +124,6 @@ std::shared_ptr<Chunk> GlobalChunks::create(int x, int z, bool lighting) {
 
         chunk->flags.loaded = true;
         for (auto& entry : chunk->inventories) {
-            entry.second->check(indices);
             level.inventories->store(entry.second);
         }
     }

@@ -88,9 +88,7 @@ Player* Players::create(int64_t id) {
     auto player = playerPtr.get();
     add(std::move(playerPtr));
 
-    auto inventory = player->getInventory();
-    inventory->check(*level.content.getIndices());
-    level.inventories->store(std::move(inventory));
+    level.inventories->store(player->getInventory());
     return player;
 }
 
@@ -150,7 +148,6 @@ void Players::deserialize(const dv::value& src) {
         if (inventory->getId() == 0) {
             inventory->setId(level.getWorld()->getNextInventoryId());
         }
-        inventory->check(*level.content.getIndices());
         level.inventories->store(inventory);
     }
 }
