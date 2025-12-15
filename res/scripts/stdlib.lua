@@ -523,8 +523,10 @@ function __process_post_runnables()
     fn_audio_reset_fetch_buffer()
     debug.pull_events()
     network.__process_events()
-    block.__process_register_events()
-    block.__perform_ticks(time.delta())
+    if not hud or not hud.is_paused() then
+        block.__process_register_events()
+        block.__perform_ticks(time.delta())
+    end
 end
 
 function time.post_runnable(runnable)
