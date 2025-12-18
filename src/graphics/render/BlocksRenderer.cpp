@@ -349,7 +349,14 @@ void BlocksRenderer::blockCustomModel(
                     auto p1 = p + n * eps;
                     auto p2 = p + n * 0.5f;
                     aoColor = pickSoftLight(p1.x, p1.y, p1.z, glm::ivec3(r), glm::ivec3(t));
-                    aoColor = glm::max(aoColor, pickSoftLight(p2.x, p2.y, p2.z, glm::ivec3(r), glm::ivec3(t)));
+                    if (!block.lightPassing) {
+                        aoColor = glm::max(
+                            aoColor,
+                            pickSoftLight(
+                                p2.x, p2.y, p2.z, glm::ivec3(r), glm::ivec3(t)
+                            )
+                        );
+                    }
                 }
                 this->vertex(
                     coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z,
