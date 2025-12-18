@@ -118,8 +118,8 @@ console.add_command(
 ## Остальные методы
 
 ```lua
-console.set_cheat(name: String, cheat: Boolean) -> cheatIsChanged: Boolean
-console.is_cheat(name: String) -> Boolean
+console.set_cheat(name: string, cheat: Boolean) -> cheatIsChanged: Boolean
+console.is_cheat(name: string) -> Boolean
 ```
 Сеттер и геттер статуса "чит" команды
 
@@ -127,10 +127,7 @@ console.is_cheat(name: String) -> Boolean
 ```lua
 console.log(...) -- Выводит информацию во внутриигровую консоль
 console.chat(...) -- Выводит информацию во внутриигровой чат
-console.get_commands_list() -> Table<String> -- Возвращает таблицу со списком команд
-console.get_command_info(name: String) -> Table -- Возвращает информацию о команде 
-console.execute(command: str) -- Выполняет команду
+console.get_commands_list() -> Table<string> -- Возвращает таблицу со списком команд
+console.get_command_info(name: string) -> Table -- Возвращает информацию о команде 
+console.execute(command: string) -- Выполняет команду
 ```
-
-
-
