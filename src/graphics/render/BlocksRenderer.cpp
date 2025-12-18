@@ -306,6 +306,7 @@ void BlocksRenderer::blockCustomModel(
         Y = orient.axes[1];
         Z = orient.axes[2];
     }
+    auto blockSize = block.size;
 
     const auto& model = cache.getModel(block.rt.id, block.getVariantIndex(states.userbits));
     for (const auto& mesh : model.meshes) {
@@ -343,8 +344,13 @@ void BlocksRenderer::blockCustomModel(
 
                 glm::vec4 aoColor {1.0f, 1.0f, 1.0f, 1.0f};
                 if (mesh.shading && ao) {
-                    auto p = coord + vcoord.x * X + vcoord.y * Y +
+                    auto p = vcoord.x * X + vcoord.y * Y +
                              vcoord.z * Z + r * 0.5f + t * 0.5f + n * 0.5f;
+                    const float eps = 0.01f;
+                    p.x = glm::max(-0.5f * blockSize.x + eps, glm::min(0.5f * blockSize.x - eps, p.x));
+                    p.y = glm::max(-0.5f * blockSize.y + eps, glm::min(0.5f * blockSize.y - eps, p.y));
+                    p.z = glm::max(-0.5f * blockSize.z + eps, glm::min(0.5f * blockSize.z - eps, p.z));
+                    p = coord + p;
                     aoColor = pickSoftLight(p.x, p.y, p.z, glm::ivec3(r), glm::ivec3(t));
                 }
                 this->vertex(
