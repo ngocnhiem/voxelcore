@@ -313,6 +313,7 @@ void BlocksRenderer::blockCustomModel(
             overflow = true;
             return;
         }
+        bool shading = mesh.shading && !block.shadeless;
         for (int triangle = 0; triangle < mesh.vertices.size() / 3; triangle++) {
             auto r = mesh.vertices[triangle * 3 + (triangle % 2) * 2].coord -
                      mesh.vertices[triangle * 3 + 1].coord;
@@ -342,7 +343,7 @@ void BlocksRenderer::blockCustomModel(
                 const auto& vcoord = vertex.coord - 0.5f;
 
                 glm::vec4 aoColor {1.0f, 1.0f, 1.0f, 1.0f};
-                if (mesh.shading && ao) {
+                if (shading && ao) {
                     const float eps = 0.05f;
                     auto p = coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z +
                              r * 0.5f + t * 0.5f + n * eps;
@@ -362,9 +363,9 @@ void BlocksRenderer::blockCustomModel(
                     coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z,
                     vertex.uv.x,
                     vertex.uv.y,
-                    mesh.shading ? (glm::vec4(d, d, d, d) * aoColor) : glm::vec4(1, 1, 1, d),
+                    shading ? (glm::vec4(d, d, d, d) * aoColor) : glm::vec4(1, 1, 1, d),
                     n,
-                    mesh.shading ? 0.0f : 1.0
+                    shading ? 0.0f : 1.0
                 );
                 indexBuffer[indexCount++] = vertexOffset++;
             }
