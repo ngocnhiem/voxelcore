@@ -47,10 +47,7 @@ local function complete_app_lib(app)
     end
     app.get_version = core.get_version
     app.get_setting_info = core.get_setting_info
-    app.load_content = function()
-        core.load_content()
-        app.tick()
-    end
+    app.load_content = core.load_content
     app.reset_content = core.reset_content
     app.is_content_loaded = core.is_content_loaded
     app.set_title = core.set_title
